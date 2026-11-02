@@ -537,3 +537,18 @@ the items they want; everything else in cycle 2 is already done.
 - No external account touched, no sign-in, payment, message,
   or external send, no key invented, no Claude Code source
   copied. npm work was inside `tui/` only.
+
+## 29. Cycle 26 never-stop — also deferred, unchanged
+- Cycle 26 used the Python preview server (Playwright venv, not
+  system Python), mock provider for unit tests, and the public
+  crystal-lang.org documentation site only (internal link clicks
+  after scroll_to, no sign-in, no text/coordinate/goto steps).
+- Still deferred, unchanged: Go toolchain install, live
+  Groq/Gemini/OpenRouter smoke tests with a user-supplied free
+  key, hand-driven TTY session, MCP HTTP-local, model-based
+  /compact, pytest / system Playwright / `pip install -e .`.
+- DECLINED, not built (unchanged from section 27): VPN /
+  IP-rotation to evade a rate or free-quota limit.
+- No external account touched, no sign-in, payment, message,
+  or external send, no key invented, no Claude Code source
+  copied. npm work was inside `tui/` only.

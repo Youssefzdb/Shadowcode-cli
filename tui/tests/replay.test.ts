@@ -521,3 +521,45 @@ describe('cycle 25 ten-page chain replay (TS TUI)', () => {
 		}
 	});
 });
+
+describe('cycle 26 eleven-page chain replay (TS TUI)', () => {
+	it('numbers scroll -> click x11 as steps 1..22, with a steps footer, without cross-marking', () => {
+		const pages = [
+			{ title: 'The Crystal Programming Language', url: 'https://crystal-lang.org/', next: '/install/', destTitle: 'Install - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/install/' },
+			{ title: 'Install - The Crystal Programming Language', url: 'https://crystal-lang.org/install/', next: '/blog/', destTitle: 'News - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/blog/' },
+			{ title: 'News - The Crystal Programming Language', url: 'https://crystal-lang.org/blog/', next: '/releases/', destTitle: 'Releases - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/releases/' },
+			{ title: 'Releases - The Crystal Programming Language', url: 'https://crystal-lang.org/releases/', next: '/community/', destTitle: 'Community - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/community/' },
+			{ title: 'Community - The Crystal Programming Language', url: 'https://crystal-lang.org/community/', next: '/sponsors/', destTitle: 'Sponsors - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/sponsors/' },
+			{ title: 'Sponsors - The Crystal Programming Language', url: 'https://crystal-lang.org/sponsors/', next: '/success-stories/', destTitle: 'Success stories - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/success-stories/' },
+			{ title: 'Success stories - The Crystal Programming Language', url: 'https://crystal-lang.org/success-stories/', next: '/used_in_prod/', destTitle: 'Used in production - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/used_in_prod/' },
+			{ title: 'Used in production - The Crystal Programming Language', url: 'https://crystal-lang.org/used_in_prod/', next: '/team/', destTitle: 'Team - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/team/' },
+			{ title: 'Team - The Crystal Programming Language', url: 'https://crystal-lang.org/team/', next: '/community/governance/', destTitle: 'Crystal governance - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/community/governance/' },
+			{ title: 'Crystal governance - The Crystal Programming Language', url: 'https://crystal-lang.org/community/governance/', next: '/media/', destTitle: 'Media - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/media/' },
+			{ title: 'Media - The Crystal Programming Language', url: 'https://crystal-lang.org/media/', next: '/learning/', destTitle: 'External resources - The Crystal Programming Language', destUrl: 'https://crystal-lang.org/learning/' },
+		];
+		const entries: any[] = [
+			{ time: '07:14:51', title: 'The Crystal Programming Language', url: 'https://crystal-lang.org/', driver: 'agent' },
+			{ time: '07:14:52', title: 'The Crystal Programming Language', url: 'https://crystal-lang.org/', driver: 'user' },
+		];
+		for (const p of pages) {
+			entries.push({ time: '07:14:52', title: p.title, url: p.url, driver: 'user', via: `preview scroll to a[href='${p.next}']` });
+			entries.push({ time: '07:14:56', title: p.destTitle, url: p.destUrl, driver: 'user', via: `preview click (a[href='${p.next}'])` });
+		}
+		entries.push({ time: '07:15:30', title: 'External resources - The Crystal Programming Language', url: 'https://crystal-lang.org/learning/', driver: 'agent' });
+		const lines = formatReplayEntries(entries);
+		const stepLines = lines.filter((l) => l.includes('[step '));
+		expect(stepLines.map((l) => l.split('[step ')[1]?.split(']')[0])).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22']);
+		for (const [i, sel] of ['/install/', '/blog/', '/releases/', '/community/', '/sponsors/', '/success-stories/', '/used_in_prod/', '/team/', '/community/governance/', '/media/', '/learning/'].entries()) {
+			expect(lines.some((l) => l.includes(`via preview scroll to a[href='${sel}'] [scroll] [step ${2 * i + 1}]`))).toBe(true);
+			expect(lines.some((l) => l.includes(`via preview click (a[href='${sel}']) [click-driven] [step ${2 * i + 2}]`))).toBe(true);
+		}
+		expect(lines.some((l) => l.includes('steps: 11 scroll, 11 click-driven, 2 driver transitions (22 action steps)'))).toBe(true);
+		expect(countScroll(entries)).toBe(11);
+		expect(countClickDriven(entries)).toBe(11);
+		expect(countTransitions(entries)).toBe(2);
+		for (const l of stepLines) {
+			if (l.includes('[scroll]')) expect(l.includes('[click-driven]')).toBe(false);
+			if (l.includes('[click-driven]')) expect(l.includes('[scroll]')).toBe(false);
+		}
+	});
+});

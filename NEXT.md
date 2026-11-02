@@ -1,6 +1,6 @@
-# Shadowcode — next cycle (cycle 26, after cycle 25)
+# Shadowcode — next cycle (cycle 27, after cycle 26)
 
-Cycle 24 is done except the items in MORNING_APPROVALS.md.
+Cycle 26 is done except the items in MORNING_APPROVALS.md.
 
 1. Live-provider smoke tests (morning approval, see
    MORNING_APPROVALS.md): one Groq free key + one live Ollama
@@ -229,9 +229,64 @@ Cycle 24 is done except the items in MORNING_APPROVALS.md.
    first try. The live script was run from inside
    ~/workspace/shadowcode, so its saved log landed directly
    in test-workspace/.shadowcode/ with no move.
-   Next browser item: a seventeenth site with an eleven-page
-   chain — scroll -> click x11 (steps 1..22) — or, if no clean
-   eleven-page chain loads, a multi-step form flow on a public
+   Cycle 26 is DONE for this item: seventeenth-site live replay
+   (crystal-lang.org, preview scroll_to on an /install/ selector,
+   then preview click_selector on the same selector, then on the
+   install page preview scroll_to on a /blog/ selector and preview
+   click_selector on it, then on the blog page preview scroll_to
+   on a /releases/ selector and preview click_selector on it,
+   then on the releases page preview scroll_to on a /community/
+   selector and preview click_selector on it, then on the
+   community page preview scroll_to on a /sponsors/ selector and
+   preview click_selector on it, then on the sponsors page
+   preview scroll_to on a /success-stories/ selector and preview
+   click_selector on it, then on the success-stories page
+   preview scroll_to on a /used_in_prod/ selector and preview
+   click_selector on it, then on the used_in_prod page preview
+   scroll_to on a /team/ selector and preview click_selector on
+   it, then on the team page preview scroll_to on a
+   /community/governance/ selector and preview click_selector on
+   it, then on the governance page preview scroll_to on a
+   /media/ selector and preview click_selector on it, then on
+   the media page preview scroll_to on a /learning/ selector and
+   preview click_selector on it, not text, not a coordinate, not
+   a goto) and scroll -> click x11 entries marked [scroll]
+   [step 1] + [click-driven] [step 2] + [scroll] [step 3] +
+   [click-driven] [step 4] + [scroll] [step 5] +
+   [click-driven] [step 6] + [scroll] [step 7] +
+   [click-driven] [step 8] + [scroll] [step 9] +
+   [click-driven] [step 10] + [scroll] [step 11] +
+   [click-driven] [step 12] + [scroll] [step 13] +
+   [click-driven] [step 14] + [scroll] [step 15] +
+   [click-driven] [step 16] + [scroll] [step 17] +
+   [click-driven] [step 18] + [scroll] [step 19] +
+   [click-driven] [step 20] + [scroll] [step 21] +
+   [click-driven] [step 22] with a steps footer in both TUIs'
+   /browser-watch-replay, with both driver transitions.
+   Probe note, honestly recorded: crystal-lang.org chain
+   selectors verified by probe (install count 2, top 229 on
+   home; blog count 2, top 38 on install; releases count 2,
+   top 482 on blog; community count 1, top 35 on releases;
+   sponsors count 3, top 53 on community; success-stories
+   count 1, top 26549 on sponsors, below the fold;
+   used_in_prod count 2, top 317 on success-stories; team
+   count 2, top 53 on used_in_prod; governance count 3,
+   top 53 on team; media count 1, top 5068 on governance,
+   below the fold; learning count 1, top 53 on media);
+   kotlinlang.org and go.dev were rejected because several
+   first matches are hidden mobile-menu items (kotlin
+   /multiplatform/ first match not visible; go.dev /doc
+   first match on the learn page not visible), and the
+   used_in_prod page carries NO /reference/ link, so the
+   first-planned used_in_prod -> reference tail was replaced
+   before the live run by used_in_prod -> team ->
+   community/governance -> media -> learning. The live script
+   was run from inside ~/workspace/shadowcode, so its saved
+   log landed directly in test-workspace/.shadowcode/ with
+   no move.
+   Next browser item: an eighteenth site with a twelve-page
+   chain — scroll -> click x12 (steps 1..24) — or, if no clean
+   twelve-page chain loads, a multi-step form flow on a public
    documentation site, to prove the sequence composes further.
 8. Packaging: verify `pip install -e .` puts `shadowcode` on PATH
    (install step deferred to the morning; offline verification

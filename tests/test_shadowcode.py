@@ -1317,6 +1317,62 @@ def test_cycle25_ten_page_chain_replay_is_step_numbered_1_to_20():
     assert len(scroll_lines) == 10 and len(click_lines) == 10
 
 
+def test_cycle26_eleven_page_chain_replay_is_step_numbered_1_to_22():
+    """Cycle 26: a scroll -> click x11 chain across eleven source pages
+    (crystal-lang.org home -> install -> blog -> releases ->
+    community -> sponsors -> success-stories -> used_in_prod ->
+    team -> community/governance -> media -> learning) must be
+    numbered step 1..22 in order in the Python replay, with a
+    steps footer (11 scroll, 11 click-driven, 2 transitions),
+    exactly as proven live on crystal-lang.org. No cross-marking:
+    scroll lines carry [scroll] only, click lines carry
+    [click-driven] only, and each selector appears only on its
+    own line's via part."""
+    from shadowcode_pkg.browser import format_watch_log
+    pages = [
+        ("The Crystal Programming Language", "https://crystal-lang.org/", "/install/", "Install - The Crystal Programming Language", "https://crystal-lang.org/install/"),
+        ("Install - The Crystal Programming Language", "https://crystal-lang.org/install/", "/blog/", "News - The Crystal Programming Language", "https://crystal-lang.org/blog/"),
+        ("News - The Crystal Programming Language", "https://crystal-lang.org/blog/", "/releases/", "Releases - The Crystal Programming Language", "https://crystal-lang.org/releases/"),
+        ("Releases - The Crystal Programming Language", "https://crystal-lang.org/releases/", "/community/", "Community - The Crystal Programming Language", "https://crystal-lang.org/community/"),
+        ("Community - The Crystal Programming Language", "https://crystal-lang.org/community/", "/sponsors/", "Sponsors - The Crystal Programming Language", "https://crystal-lang.org/sponsors/"),
+        ("Sponsors - The Crystal Programming Language", "https://crystal-lang.org/sponsors/", "/success-stories/", "Success stories - The Crystal Programming Language", "https://crystal-lang.org/success-stories/"),
+        ("Success stories - The Crystal Programming Language", "https://crystal-lang.org/success-stories/", "/used_in_prod/", "Used in production - The Crystal Programming Language", "https://crystal-lang.org/used_in_prod/"),
+        ("Used in production - The Crystal Programming Language", "https://crystal-lang.org/used_in_prod/", "/team/", "Team - The Crystal Programming Language", "https://crystal-lang.org/team/"),
+        ("Team - The Crystal Programming Language", "https://crystal-lang.org/team/", "/community/governance/", "Crystal governance - The Crystal Programming Language", "https://crystal-lang.org/community/governance/"),
+        ("Crystal governance - The Crystal Programming Language", "https://crystal-lang.org/community/governance/", "/media/", "Media - The Crystal Programming Language", "https://crystal-lang.org/media/"),
+        ("Media - The Crystal Programming Language", "https://crystal-lang.org/media/", "/learning/", "External resources - The Crystal Programming Language", "https://crystal-lang.org/learning/"),
+    ]
+    entries = [
+        {"time": "07:14:51", "url": "https://crystal-lang.org/", "title": "The Crystal Programming Language", "driver": "agent"},
+        {"time": "07:14:52", "url": "https://crystal-lang.org/", "title": "The Crystal Programming Language", "driver": "user"},
+    ]
+    for title, url, nxt, dest_title, dest_url in pages:
+        entries.append({"time": "07:14:52", "url": url, "title": title, "driver": "user", "via": f"preview scroll to a[href='{nxt}']"})
+        entries.append({"time": "07:14:56", "url": dest_url, "title": dest_title, "driver": "user", "via": f"preview click (a[href='{nxt}'])"})
+    entries.append({"time": "07:15:30", "url": "https://crystal-lang.org/learning/", "title": "External resources - The Crystal Programming Language", "driver": "agent"})
+    text = format_watch_log(entries, "saved.json")
+    lines = text.splitlines()
+    step_lines = [l for l in lines if "[step " in l]
+    assert [l.split("[step ")[1].split("]")[0] for l in step_lines] == [str(n) for n in range(1, 23)]
+    for n, sel in enumerate(["/install/", "/blog/", "/releases/", "/community/", "/sponsors/", "/success-stories/", "/used_in_prod/", "/team/", "/community/governance/", "/media/", "/learning/"], 1):
+        assert f"via preview scroll to a[href='{sel}'] [scroll] [step {2 * n - 1}]" in text
+        assert f"via preview click (a[href='{sel}']) [click-driven] [step {2 * n}]" in text
+    assert "steps: 11 scroll, 11 click-driven, 2 driver transitions (22 action steps)" in text
+    for l in step_lines:
+        if "[scroll]" in l:
+            assert "[click-driven]" not in l
+        if "[click-driven]" in l:
+            assert "[scroll]" not in l
+    def via_part(line):
+        return line.split(" via ", 1)[1].split(" [scroll]")[0].split(" [click-driven]")[0]
+    scroll_lines = [l for l in step_lines if "[scroll]" in l]
+    click_lines = [l for l in step_lines if "[click-driven]" in l]
+    sels = ["/install/", "/blog/", "/releases/", "/community/", "/sponsors/", "/success-stories/", "/used_in_prod/", "/team/", "/community/governance/", "/media/", "/learning/"]
+    assert set(via_part(l) for l in scroll_lines) == {f"preview scroll to a[href='{s}']" for s in sels}
+    assert set(via_part(l) for l in click_lines) == {f"preview click (a[href='{s}'])" for s in sels}
+    assert len(scroll_lines) == 11 and len(click_lines) == 11
+
+
 def test_kilo_provider_no_key_no_auth_header_and_default_model():
     """Kilo cycle: get_provider('kilo') defaults to kilo-auto/free,
     sends NO Authorization header when KILO_API_KEY is unset, and
