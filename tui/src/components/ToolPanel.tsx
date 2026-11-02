@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { cardPreview, formatElapsed, type ToolCard } from '../lib/toolCards.js';
+import { cardPreview, formatElapsed, toolCardBorderColor, toolDisplayName, type ToolCard } from '../lib/toolCards.js';
 import type { Theme } from '../lib/theme.js';
 
 /** Live tool panel (right sidebar, collapsible via Ctrl+T / /panel).
@@ -41,12 +41,12 @@ export function ToolPanel(props: {
 			{shown.length === 0 && !props.thinking ? <Text color={t.muted}>No tools yet.</Text> : null}
 			{shown.map((card) => {
 				const icon = card.status === 'running' ? '◐' : card.status === 'done' ? '✓' : '✕';
-				const color = card.status === 'running' ? t.primary : card.status === 'done' ? t.success : t.error;
+				const color = toolCardBorderColor(card.status, t);
 				return (
 					<Box key={card.id} flexDirection="column">
 						<Text>
 							<Text bold color={color}>
-								{icon} {card.name}
+								{icon} {toolDisplayName(card.name, card.result)}
 							</Text>
 							<Text color={t.muted}>{card.elapsedMs !== undefined ? ` ${formatElapsed(card.elapsedMs)}` : ''}</Text>
 						</Text>

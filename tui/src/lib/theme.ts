@@ -88,6 +88,26 @@ export const THEMES: Record<string, Theme> = {
 		tool: '#f9e2af',
 		border: '#313244',
 	},
+	// Claude-style layout theme (Design 1, user-chosen mockup):
+	// near-black background is the terminal's own background (Ink
+	// does not paint a background), purple wordmark + cyan
+	// assistant lines, green tool cards. Original hex values in
+	// that style, not copied from any other product's source.
+	'claude-dark': {
+		name: 'claude-dark',
+		label: 'Claude Dark',
+		primary: '#a78bfa',
+		secondary: '#67e8f9',
+		success: '#4ade80',
+		warning: '#facc15',
+		error: '#f87171',
+		muted: '#9ca3af',
+		user: '#c084fc',
+		assistant: '#67e8f9',
+		system: '#9ca3af',
+		tool: '#4ade80',
+		border: '#374151',
+	},
 };
 
 export const THEME_NAMES: string[] = Object.keys(THEMES);

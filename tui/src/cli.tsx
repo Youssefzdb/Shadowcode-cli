@@ -8,6 +8,7 @@ import React from 'react';
 import { render } from 'ink';
 import { App } from './App.js';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 function parseArgs(argv: string[]): Record<string, string> {
@@ -35,6 +36,15 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
 const here = path.dirname(fileURLToPath(import.meta.url));
 // dist/cli.js -> ../../main.py (repo root)
 const pythonCore = path.resolve(here, '..', '..', 'main.py');
+// Real version from this package's package.json; undefined if
+// it cannot be read — the header then omits it, never guesses.
+let tuiVersion: string | undefined;
+try {
+	const pkg = JSON.parse(readFileSync(path.resolve(here, '..', 'package.json'), 'utf8')) as Record<string, unknown>;
+	if (typeof pkg.version === 'string') tuiVersion = pkg.version;
+} catch {
+	tuiVersion = undefined;
+}
 
 render(
 	React.createElement(App, {
@@ -45,6 +55,7 @@ render(
 			workdir: args.workdir ?? process.cwd(),
 			permissionMode: (args['permission-mode'] as 'manual' | 'auto' | 'plan') ?? 'auto',
 			allowDestructive: args['allow-destructive'] === 'true',
+			version: tuiVersion,
 		},
 		initialSessionId: args.session,
 	}),

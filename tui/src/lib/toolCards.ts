@@ -75,3 +75,66 @@ export function formatElapsed(ms?: number): string {
 export function cardPreview(card: ToolCard): string {
 	return truncate(card.result.replace(/\n/g, ' '), 100);
 }
+
+/** Human title for a tool card, from the real tool name + result.
+ *
+ * The core protocol carries no tool arguments, only the result
+ * string, so a target is shown ONLY when the result itself
+ * names a file ("wrote <path> (…)", "edited <path>",
+ * "diff for <path> (not applied)"). For read_file the result
+ * is the file content, not a path, so no target is claimed.
+ * Unknown tools fall back to a title-cased tool name.
+ */
+export function toolDisplayName(name: string, result: string): string {
+	const base = (p: string): string => {
+		const parts = p.split('/');
+		return parts[parts.length - 1] ?? p;
+	};
+	const wrote = /^wrote (.+?) \(/.exec(result);
+	if (name === 'write_file' && wrote) return `Write file: ${base(wrote[1] ?? '')}`;
+	const edited = /^edited (.+)$/.exec(result.trim().split('\n')[0] ?? '');
+	if (name === 'edit_file' && edited) return `Edit file: ${base(edited[1] ?? '')}`;
+	const diff = /^diff for (.+?) \(not applied\)/.exec(result);
+	if (name === 'diff_edit' && diff) return `Diff: ${base(diff[1] ?? '')}`;
+	const pretty: Record<string, string> = {
+		read_file: 'Read file',
+		write_file: 'Write file',
+		edit_file: 'Edit file',
+		diff_edit: 'Diff',
+		list_dir: 'List dir',
+		search_files: 'Search files',
+		run_shell: 'Run shell',
+		mcp_call: 'MCP call',
+		browser_open: 'Browser open',
+		browser_read: 'Browser read',
+		browser_watch: 'Browser watch',
+		browser_watch_replay: 'Browser watch replay',
+		browser_click: 'Browser click',
+		browser_click_selector: 'Browser click',
+		browser_fill: 'Browser fill',
+		browser_fill_selector: 'Browser fill',
+		browser_fill_form: 'Browser fill form',
+		browser_scroll: 'Browser scroll',
+		browser_screenshot: 'Browser screenshot',
+		browser_navigate: 'Browser navigate',
+		browser_close: 'Browser close',
+		count_lines: 'Count lines',
+		fuzzy_score: 'Fuzzy score',
+	};
+	return pretty[name] ?? name.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/** Border colour for a tool card, by status (theme hex values). */
+export function toolCardBorderColor(
+	status: ToolCardStatus,
+	theme: { success: string; warning: string; error: string },
+): string {
+	if (status === 'running') return theme.warning;
+	if (status === 'failed') return theme.error;
+	return theme.success;
+}
+
+/** Status of a finished tool line, from its real result. */
+export function toolLineStatus(result: string): ToolCardStatus {
+	return toolStatusMark(result) === '✕' ? 'failed' : 'done';
+}

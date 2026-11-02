@@ -606,3 +606,47 @@ describe('cycle 27 twelve-page chain replay (TS TUI)', () => {
 		}
 	});
 });
+
+describe('cycle 28 thirteen-page chain replay (TS TUI)', () => {
+	it('numbers scroll -> click x13 as steps 1..26, with a steps footer, without cross-marking', () => {
+		const pages = [
+			{ title: 'Index - Erlang/OTP', url: 'https://www.erlang.org/', next: '/downloads', destTitle: 'Downloads - Erlang/OTP', destUrl: 'https://www.erlang.org/downloads' },
+			{ title: 'Downloads - Erlang/OTP', url: 'https://www.erlang.org/downloads', next: '/downloads/29', destTitle: '29 - Erlang/OTP', destUrl: 'https://www.erlang.org/downloads/29' },
+			{ title: '29 - Erlang/OTP', url: 'https://www.erlang.org/downloads/29', next: '/eeps/eep-0079', destTitle: 'Eep 0079 - Erlang/OTP', destUrl: 'https://www.erlang.org/eeps/eep-0079' },
+			{ title: 'Eep 0079 - Erlang/OTP', url: 'https://www.erlang.org/eeps/eep-0079', next: '/docs', destTitle: 'Documentation - Erlang/OTP', destUrl: 'https://www.erlang.org/docs.html' },
+			{ title: 'Documentation - Erlang/OTP', url: 'https://www.erlang.org/docs.html', next: '/community', destTitle: 'Community - Erlang/OTP', destUrl: 'https://www.erlang.org/community' },
+			{ title: 'Community - Erlang/OTP', url: 'https://www.erlang.org/community', next: '/news', destTitle: 'News - Erlang/OTP', destUrl: 'https://www.erlang.org/news' },
+			{ title: 'News - Erlang/OTP', url: 'https://www.erlang.org/news', next: '/news/191', destTitle: 'Erlang/OTP 29.1 Release - Erlang/OTP', destUrl: 'https://www.erlang.org/news/191' },
+			{ title: 'Erlang/OTP 29.1 Release - Erlang/OTP', url: 'https://www.erlang.org/news/191', next: '/blog', destTitle: 'Blog - Erlang/OTP', destUrl: 'https://www.erlang.org/blog' },
+			{ title: 'Blog - Erlang/OTP', url: 'https://www.erlang.org/blog', next: '/blog/highlights-otp-29/', destTitle: 'Erlang/OTP 29 Highlights - Erlang/OTP', destUrl: 'https://www.erlang.org/blog/highlights-otp-29/' },
+			{ title: 'Erlang/OTP 29 Highlights - Erlang/OTP', url: 'https://www.erlang.org/blog/highlights-otp-29/', next: '/security', destTitle: 'Security - Erlang/OTP', destUrl: 'https://www.erlang.org/security' },
+			{ title: 'Security - Erlang/OTP', url: 'https://www.erlang.org/security', next: '/eep', destTitle: 'Erlang Enhancement Process - Erlang/OTP', destUrl: 'https://www.erlang.org/eep' },
+			{ title: 'Erlang Enhancement Process - Erlang/OTP', url: 'https://www.erlang.org/eep', next: '/eeps/eep-0001', destTitle: 'Eep 0001 - Erlang/OTP', destUrl: 'https://www.erlang.org/eeps/eep-0001' },
+			{ title: 'Eep 0001 - Erlang/OTP', url: 'https://www.erlang.org/eeps/eep-0001', next: '/about', destTitle: 'About - Erlang/OTP', destUrl: 'https://www.erlang.org/about' },
+		];
+		const entries: any[] = [
+			{ time: '07:41:17', title: 'Index - Erlang/OTP', url: 'https://www.erlang.org/', driver: 'agent' },
+			{ time: '07:41:18', title: 'Index - Erlang/OTP', url: 'https://www.erlang.org/', driver: 'user' },
+		];
+		for (const p of pages) {
+			entries.push({ time: '07:41:19', title: p.title, url: p.url, driver: 'user', via: `preview scroll to a[href='${p.next}']` });
+			entries.push({ time: '07:41:22', title: p.destTitle, url: p.destUrl, driver: 'user', via: `preview click (a[href='${p.next}'])` });
+		}
+		entries.push({ time: '07:42:09', title: 'About - Erlang/OTP', url: 'https://www.erlang.org/about', driver: 'agent' });
+		const lines = formatReplayEntries(entries);
+		const stepLines = lines.filter((l) => l.includes('[step '));
+		expect(stepLines.map((l) => l.split('[step ')[1]?.split(']')[0])).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26']);
+		for (const [i, sel] of ['/downloads', '/downloads/29', '/eeps/eep-0079', '/docs', '/community', '/news', '/news/191', '/blog', '/blog/highlights-otp-29/', '/security', '/eep', '/eeps/eep-0001', '/about'].entries()) {
+			expect(lines.some((l) => l.includes(`via preview scroll to a[href='${sel}'] [scroll] [step ${2 * i + 1}]`))).toBe(true);
+			expect(lines.some((l) => l.includes(`via preview click (a[href='${sel}']) [click-driven] [step ${2 * i + 2}]`))).toBe(true);
+		}
+		expect(lines.some((l) => l.includes('steps: 13 scroll, 13 click-driven, 2 driver transitions (26 action steps)'))).toBe(true);
+		expect(countScroll(entries)).toBe(13);
+		expect(countClickDriven(entries)).toBe(13);
+		expect(countTransitions(entries)).toBe(2);
+		for (const l of stepLines) {
+			if (l.includes('[scroll]')) expect(l.includes('[click-driven]')).toBe(false);
+			if (l.includes('[click-driven]')) expect(l.includes('[scroll]')).toBe(false);
+		}
+	});
+});

@@ -58,3 +58,17 @@ export function modeInfo(mode: PermissionMode): ModeInfo {
 export function modeLabel(mode: PermissionMode): string {
 	return MODE_INFO[mode].label;
 }
+
+/** Status-bar permission wording, from the real core mode only.
+ *
+ * This is NOT a claim that edits are auto-accepted: in
+ * subprocess mode the core still guards writes/shell unless
+ * --allow-destructive + --yes was passed (see lib/agent.ts).
+ * So 'auto' is honestly labelled 'guarded', and the flag is
+ * shown separately when it is actually set.
+ */
+export function autoAcceptLabel(mode: PermissionMode, allowDestructive: boolean): string {
+	if (mode === 'plan') return 'Auto-accept edits: off (read-only)';
+	if (mode === 'manual') return 'Auto-accept edits: ask';
+	return allowDestructive ? 'Auto-accept edits: on' : 'Auto-accept edits: guarded';
+}

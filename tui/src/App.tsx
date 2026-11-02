@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import path from 'node:path';
-import { Box, Text, useApp, useInput } from 'ink';
+import { Box, useApp, useInput } from 'ink';
 import { Header } from './components/Header.js';
 import { Transcript } from './components/Transcript.js';
 import { ToolPanel } from './components/ToolPanel.js';
@@ -10,6 +10,7 @@ import { PermissionPrompt } from './components/PermissionPrompt.js';
 import { HelpOverlay } from './components/HelpOverlay.js';
 import { CommandPalette } from './components/CommandPalette.js';
 import { resolveTheme, THEME_NAMES, isThemeName } from './lib/theme.js';
+import { readGitBranch } from './lib/git.js';
 import { parseMode, modeInfo, type PermissionMode } from './lib/mode.js';
 import { filterCommands } from './lib/palette.js';
 import { cardFromToolEvent, type ToolCard } from './lib/toolCards.js';
@@ -71,7 +72,9 @@ export function App(props: AppProps): React.ReactElement {
 		return Number.isFinite(p) && p > 0 ? p : 8765;
 	});
 	const [permission, setPermission] = useState<string | null>(null);
-	const [themeName, setThemeName] = useState<string>('dark');
+	// Claude-style layout (Design 1) is the default theme now;
+	// /theme still switches to dark/light/tokyonight/catppuccin.
+	const [themeName, setThemeName] = useState<string>('claude-dark');
 	const theme = resolveTheme(themeName);
 	const [permissionMode, setPermissionModeState] = useState<PermissionMode>(
 		(props.agent.permissionMode as PermissionMode) ?? 'auto',
@@ -84,7 +87,12 @@ export function App(props: AppProps): React.ReactElement {
 		[props.agent],
 	);
 	const [toolCards, setToolCards] = useState<ToolCard[]>([]);
-	const [panelCollapsed, setPanelCollapsed] = useState(false);
+	// Claude style: tool cards live in the transcript, so the
+	// sidebar starts collapsed; Ctrl+T / /panel still toggles it.
+	const [panelCollapsed, setPanelCollapsed] = useState(true);
+	// Git branch read once from the workdir's .git/HEAD (null
+	// when not a repo — the status bar then omits the field).
+	const [gitBranch] = useState<string | null>(() => readGitBranch(props.agent.workdir));
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const [paletteQuery, setPaletteQuery] = useState('');
@@ -552,10 +560,12 @@ export function App(props: AppProps): React.ReactElement {
 				theme={theme}
 				provider={props.agent.provider}
 				model={props.agent.model ?? ''}
+				version={props.agent.version}
 				sessionId={sessionId}
 				modeLabel={modeInfo(permissionMode).label}
 				permissionMode={permissionMode}
 				toolCount={toolCount}
+				cwd={props.agent.workdir}
 				browserUrl={browserUrl}
 				browserDriver={browserUrl ? browserDriver : undefined}
 				browserTitle={previewTitle || undefined}
@@ -574,9 +584,8 @@ export function App(props: AppProps): React.ReactElement {
 			{paletteOpen ? (
 				<CommandPalette theme={theme} query={paletteQuery} commands={filterCommands(paletteQuery)} selected={paletteSelected} />
 			) : null}
-			<StatusBar theme={theme} status="Ready" thinking={thinking} spinner={spinner} toolCount={toolCount} lastTool={lastTool} messageCount={lines.length} modeLabel={modeInfo(permissionMode).label} previewHealthy={previewHealthy} previewPort={goPort} previewDriver={browserDriver} previewTitle={previewTitle || undefined} previewUrl={browserPageUrl || undefined} />
-			<Input value={input} theme={theme} modeLabel={modeInfo(permissionMode).label} thinking={thinking} />
-			<Text color={theme.muted}>Ctrl+P palette · /help · Ctrl+T tools panel · /theme · /mode · /panel — browser preview URL appears in the header when the agent opens the browser.</Text>
+			<StatusBar theme={theme} thinking={thinking} spinner={spinner} permissionMode={permissionMode} allowDestructive={props.agent.allowDestructive ?? false} cwd={props.agent.workdir} gitBranch={gitBranch} />
+			<Input value={input} theme={theme} thinking={thinking} />
 		</Box>
 	);
 }

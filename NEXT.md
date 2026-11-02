@@ -1,6 +1,6 @@
-# Shadowcode — next cycle (cycle 28, after cycle 27)
+# Shadowcode — next cycle (cycle 29, after cycle 28)
 
-Cycle 27 is done except the items in MORNING_APPROVALS.md.
+Cycle 28 is done except the items in MORNING_APPROVALS.md.
 
 1. Live-provider smoke tests (morning approval, see
    MORNING_APPROVALS.md): one Groq free key + one live Ollama
@@ -284,9 +284,46 @@ Cycle 27 is done except the items in MORNING_APPROVALS.md.
    was run from inside ~/workspace/shadowcode, so its saved
    log landed directly in test-workspace/.shadowcode/ with
    no move.
-   Next browser item: a nineteenth site with a thirteen-page
-   chain — scroll -> click x13 (steps 1..26) — or, if no clean
-   thirteen-page chain loads, a multi-step form flow on a public
+   Cycle 28 is DONE for this item: nineteenth-site live replay
+   (erlang.org, preview scroll_to on a /downloads selector, then
+   preview click_selector on it, then on the downloads page
+   preview scroll_to on a /downloads/29 selector and preview
+   click_selector on it, then on the downloads/29 page preview
+   scroll_to on a /eeps/eep-0079 selector and preview
+   click_selector on it, then on the eep-0079 page preview
+   scroll_to on a /docs selector and preview click_selector on
+   it, then on the docs page preview scroll_to on a /community
+   selector and preview click_selector on it, then on the
+   community page preview scroll_to on a /news selector and
+   preview click_selector on it, then on the news page preview
+   scroll_to on a /news/191 selector and preview click_selector
+   on it, then on the news/191 page preview scroll_to on a
+   /blog selector and preview click_selector on it, then on
+   the blog page preview scroll_to on a
+   /blog/highlights-otp-29/ selector and preview click_selector
+   on it, then on the highlights page preview scroll_to on a
+   /security selector and preview click_selector on it, then
+   on the security page preview scroll_to on a /eep selector
+   and preview click_selector on it, then on the eep page
+   preview scroll_to on a /eeps/eep-0001 selector and preview
+   click_selector on it, then on the eep-0001 page preview
+   scroll_to on a /about selector and preview click_selector
+   on it, not text, not a coordinate, not a goto) and scroll
+   -> click x13 entries marked [scroll] [step 1] +
+   [click-driven] [step 2] + ... + [scroll] [step 25] +
+   [click-driven] [step 26] with a steps footer in both TUIs'
+   /browser-watch-replay, with both driver transitions.
+   Probe note, honestly recorded: go.dev was rejected after
+   a live failure (pair 2, a dropdown /doc match, is
+   unclickable — "outside of the viewport" — so that partial
+   run is not claimed); elm-lang.org and fsharp.org were
+   rejected in probe (nav-hub dead ends; 0x0 hidden sidebar).
+   The live script was run from inside ~/workspace/shadowcode,
+   so its saved log landed directly in
+   test-workspace/.shadowcode/ with no move.
+   Next browser item: a twentieth site with a fourteen-page
+   chain — scroll -> click x14 (steps 1..28) — or, if no clean
+   fourteen-page chain loads, a multi-step form flow on a public
    documentation site, to prove the sequence composes further.
 8. Packaging: verify `pip install -e .` puts `shadowcode` on PATH
    (install step deferred to the morning; offline verification

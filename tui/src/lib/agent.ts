@@ -17,6 +17,9 @@ export interface AgentOptions {
 	workdir: string;
 	permissionMode?: 'manual' | 'auto' | 'plan';
 	allowDestructive?: boolean;
+	/** TUI package version, read from package.json by cli.tsx
+	 * (undefined = omit the version field, never guess it). */
+	version?: string;
 }
 
 export interface AgentHandle {

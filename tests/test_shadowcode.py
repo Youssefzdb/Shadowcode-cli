@@ -1495,3 +1495,60 @@ def test_kilo_provider_uses_key_only_when_set_and_rejects_reasoning_only():
         raise AssertionError("groq without a key must raise")
     except RuntimeError as e:
         assert "GROQ_API_KEY" in str(e)
+
+
+def test_cycle28_thirteen_page_chain_replay_is_step_numbered_1_to_26():
+    """Cycle 28: a scroll -> click x13 chain across thirteen source pages
+    (erlang.org home -> downloads -> downloads/29 -> eeps/eep-0079 ->
+    docs.html -> community -> news -> news/191 -> blog ->
+    blog/highlights-otp-29/ -> security -> eep -> eeps/eep-0001 ->
+    about) must be numbered step 1..26 in order in the Python replay,
+    with a steps footer (13 scroll, 13 click-driven, 2 transitions),
+    exactly as proven live on erlang.org. No cross-marking: scroll
+    lines carry [scroll] only, click lines carry [click-driven]
+    only, and each selector appears only on its own line's via part."""
+    from shadowcode_pkg.browser import format_watch_log
+    pages = [
+        ("Index - Erlang/OTP", "https://www.erlang.org/", "/downloads", "Downloads - Erlang/OTP", "https://www.erlang.org/downloads"),
+        ("Downloads - Erlang/OTP", "https://www.erlang.org/downloads", "/downloads/29", "29 - Erlang/OTP", "https://www.erlang.org/downloads/29"),
+        ("29 - Erlang/OTP", "https://www.erlang.org/downloads/29", "/eeps/eep-0079", "Eep 0079 - Erlang/OTP", "https://www.erlang.org/eeps/eep-0079"),
+        ("Eep 0079 - Erlang/OTP", "https://www.erlang.org/eeps/eep-0079", "/docs", "Documentation - Erlang/OTP", "https://www.erlang.org/docs.html"),
+        ("Documentation - Erlang/OTP", "https://www.erlang.org/docs.html", "/community", "Community - Erlang/OTP", "https://www.erlang.org/community"),
+        ("Community - Erlang/OTP", "https://www.erlang.org/community", "/news", "News - Erlang/OTP", "https://www.erlang.org/news"),
+        ("News - Erlang/OTP", "https://www.erlang.org/news", "/news/191", "Erlang/OTP 29.1 Release - Erlang/OTP", "https://www.erlang.org/news/191"),
+        ("Erlang/OTP 29.1 Release - Erlang/OTP", "https://www.erlang.org/news/191", "/blog", "Blog - Erlang/OTP", "https://www.erlang.org/blog"),
+        ("Blog - Erlang/OTP", "https://www.erlang.org/blog", "/blog/highlights-otp-29/", "Erlang/OTP 29 Highlights - Erlang/OTP", "https://www.erlang.org/blog/highlights-otp-29/"),
+        ("Erlang/OTP 29 Highlights - Erlang/OTP", "https://www.erlang.org/blog/highlights-otp-29/", "/security", "Security - Erlang/OTP", "https://www.erlang.org/security"),
+        ("Security - Erlang/OTP", "https://www.erlang.org/security", "/eep", "Erlang Enhancement Process - Erlang/OTP", "https://www.erlang.org/eep"),
+        ("Erlang Enhancement Process - Erlang/OTP", "https://www.erlang.org/eep", "/eeps/eep-0001", "Eep 0001 - Erlang/OTP", "https://www.erlang.org/eeps/eep-0001"),
+        ("Eep 0001 - Erlang/OTP", "https://www.erlang.org/eeps/eep-0001", "/about", "About - Erlang/OTP", "https://www.erlang.org/about"),
+    ]
+    entries = [
+        {"time": "07:41:17", "url": "https://www.erlang.org/", "title": "Index - Erlang/OTP", "driver": "agent"},
+        {"time": "07:41:18", "url": "https://www.erlang.org/", "title": "Index - Erlang/OTP", "driver": "user"},
+    ]
+    for title, url, nxt, dest_title, dest_url in pages:
+        entries.append({"time": "07:41:19", "url": url, "title": title, "driver": "user", "via": f"preview scroll to a[href='{nxt}']"})
+        entries.append({"time": "07:41:22", "url": dest_url, "title": dest_title, "driver": "user", "via": f"preview click (a[href='{nxt}'])"})
+    entries.append({"time": "07:42:09", "url": "https://www.erlang.org/about", "title": "About - Erlang/OTP", "driver": "agent"})
+    text = format_watch_log(entries, "saved.json")
+    lines = text.splitlines()
+    step_lines = [l for l in lines if "[step " in l]
+    assert [l.split("[step ")[1].split("]")[0] for l in step_lines] == [str(n) for n in range(1, 27)]
+    sels = ["/downloads", "/downloads/29", "/eeps/eep-0079", "/docs", "/community", "/news", "/news/191", "/blog", "/blog/highlights-otp-29/", "/security", "/eep", "/eeps/eep-0001", "/about"]
+    for n, sel in enumerate(sels, 1):
+        assert f"via preview scroll to a[href='{sel}'] [scroll] [step {2 * n - 1}]" in text
+        assert f"via preview click (a[href='{sel}']) [click-driven] [step {2 * n}]" in text
+    assert "steps: 13 scroll, 13 click-driven, 2 driver transitions (26 action steps)" in text
+    for l in step_lines:
+        if "[scroll]" in l:
+            assert "[click-driven]" not in l
+        if "[click-driven]" in l:
+            assert "[scroll]" not in l
+    def via_part(line):
+        return line.split(" via ", 1)[1].split(" [scroll]")[0].split(" [click-driven]")[0]
+    scroll_lines = [l for l in step_lines if "[scroll]" in l]
+    click_lines = [l for l in step_lines if "[click-driven]" in l]
+    assert set(via_part(l) for l in scroll_lines) == {f"preview scroll to a[href='{s}']" for s in sels}
+    assert set(via_part(l) for l in click_lines) == {f"preview click (a[href='{s}'])" for s in sels}
+    assert len(scroll_lines) == 13 and len(click_lines) == 13

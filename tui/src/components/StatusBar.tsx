@@ -1,40 +1,35 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { autoAcceptLabel, type PermissionMode } from '../lib/mode.js';
 import type { Theme } from '../lib/theme.js';
 
+/** Claude-style bottom status bar (Design 1):
+ * left — `ESC to interrupt • ↑/↓ history • /help commands`;
+ * right — real permission state, cwd, and git branch ONLY
+ * when the workdir really is a git repo (gitBranch === null
+ * omits the field). Lines-changed is deliberately absent:
+ * tool results carry no line-change count, so any number
+ * here would be invented. Tokens/cost are likewise absent:
+ * the protocol does not report them.
+ */
 export function StatusBar(props: {
 	theme: Theme;
-	status: string;
 	thinking: boolean;
 	spinner: string;
-	toolCount: number;
-	lastTool: string;
-	messageCount: number;
-	modeLabel: string;
-	previewHealthy?: boolean | null;
-	previewPort?: number;
-	previewDriver?: string;
-	previewTitle?: string;
-	previewUrl?: string;
+	permissionMode: PermissionMode;
+	allowDestructive: boolean;
+	cwd: string;
+	gitBranch: string | null;
 }): React.ReactElement {
 	const t = props.theme;
-	const preview =
-		props.previewHealthy === null || props.previewHealthy === undefined
-			? 'preview=unknown'
-			: `preview localhost:${props.previewPort ?? 8765} ${props.previewHealthy ? 'healthy' : 'unavailable'} driver=${props.previewDriver ?? 'agent'}`;
-	const page = props.previewTitle || props.previewUrl ? ` page=${(props.previewTitle || props.previewUrl || '').slice(0, 40)}` : '';
 	return (
-		<Box borderStyle="single" borderColor={t.border} paddingX={1}>
-			<Text>
-				<Text bold color={props.thinking ? t.primary : t.success}>
-					{props.thinking ? `${props.spinner} thinking` : props.status}
-				</Text>
-				<Text color={t.muted}>
-					{' '}
-					│ mode {props.modeLabel} │ msgs={props.messageCount} tools={props.toolCount}
-					{props.lastTool ? ` last=${props.lastTool}` : ''} │ {preview}
-					{page} │ Ctrl+P palette · /help · Ctrl+T panel
-				</Text>
+		<Box flexDirection="row" justifyContent="space-between" paddingX={1}>
+			<Text color={t.muted}>
+				{props.thinking ? `${props.spinner} ` : ''}ESC to interrupt • ↑/↓ history • /help commands
+			</Text>
+			<Text color={t.muted}>
+				{autoAcceptLabel(props.permissionMode, props.allowDestructive)} • cwd: {props.cwd}
+				{props.gitBranch ? ` • git: ${props.gitBranch}` : ''}
 			</Text>
 		</Box>
 	);
