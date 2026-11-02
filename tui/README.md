@@ -15,6 +15,23 @@ npm run build        # tsc -> dist/
 # or: node dist/cli.js --provider mock --workdir ../test-workspace
 ```
 
+## After cloning from GitHub
+
+The GitHub snapshot does **not** ship `dist/` and does **not**
+preserve the executable bit on wrapper scripts, so a fresh clone
+needs two one-time steps (Node >= 20 required):
+
+```bash
+chmod +x ./shadowcode ./tui/bin/shadowcode-tui
+cd tui && npm install && npm run build && cd ..
+./tui/bin/shadowcode-tui --provider kilo
+```
+
+After that first build, `dist/cli.js` exists and the wrapper runs
+with `node` alone — no `npm` needed on every launch. Without Node,
+use the Python curses TUI instead (`./shadowcode --tui`), which
+needs Python only but is not the new Claude-style Ink UI.
+
 Non-TTY runs (piped stdin, CI) do **not** crash: `src/cli.tsx`
 prints a fallback message and exits 0, pointing at the Python CLI.
 
