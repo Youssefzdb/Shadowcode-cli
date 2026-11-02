@@ -48,4 +48,8 @@ render(
 		},
 		initialSessionId: args.session,
 	}),
+	// Alternate screen: the TUI takes over the terminal like
+	// Claude Code / OpenCode / Kilo do, and restores the shell
+	// view on exit instead of scrolling the transcript away.
+	{ alternateScreen: true },
 );

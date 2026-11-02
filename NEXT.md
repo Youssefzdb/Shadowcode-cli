@@ -1,6 +1,6 @@
-# Shadowcode — next cycle (cycle 27, after cycle 26)
+# Shadowcode — next cycle (cycle 28, after cycle 27)
 
-Cycle 26 is done except the items in MORNING_APPROVALS.md.
+Cycle 27 is done except the items in MORNING_APPROVALS.md.
 
 1. Live-provider smoke tests (morning approval, see
    MORNING_APPROVALS.md): one Groq free key + one live Ollama
@@ -284,9 +284,9 @@ Cycle 26 is done except the items in MORNING_APPROVALS.md.
    was run from inside ~/workspace/shadowcode, so its saved
    log landed directly in test-workspace/.shadowcode/ with
    no move.
-   Next browser item: an eighteenth site with a twelve-page
-   chain — scroll -> click x12 (steps 1..24) — or, if no clean
-   twelve-page chain loads, a multi-step form flow on a public
+   Next browser item: a nineteenth site with a thirteen-page
+   chain — scroll -> click x13 (steps 1..26) — or, if no clean
+   thirteen-page chain loads, a multi-step form flow on a public
    documentation site, to prove the sequence composes further.
 8. Packaging: verify `pip install -e .` puts `shadowcode` on PATH
    (install step deferred to the morning; offline verification

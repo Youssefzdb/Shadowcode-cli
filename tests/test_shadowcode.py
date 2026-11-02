@@ -1372,6 +1372,65 @@ def test_cycle26_eleven_page_chain_replay_is_step_numbered_1_to_22():
     assert set(via_part(l) for l in click_lines) == {f"preview click (a[href='{s}'])" for s in sels}
     assert len(scroll_lines) == 11 and len(click_lines) == 11
 
+def test_cycle27_twelve_page_chain_replay_is_step_numbered_1_to_24():
+    """Cycle 27: a scroll -> click x12 chain across twelve source pages
+    (clojure.org home -> about/rationale -> reference/reader (via
+    /reference/documentation) -> api/api -> releases/downloads ->
+    guides/getting_started (via /guides/guides) ->
+    community/success_stories -> dev/dev -> news/news ->
+    community/resources -> community/contributing ->
+    community/companies -> community/license) must be numbered
+    step 1..24 in order in the Python replay, with a steps footer
+    (12 scroll, 12 click-driven, 2 transitions), exactly as proven
+    live on clojure.org. No cross-marking: scroll lines carry
+    [scroll] only, click lines carry [click-driven] only, and
+    each selector appears only on its own line's via part."""
+    from shadowcode_pkg.browser import format_watch_log
+    pages = [
+        ("Clojure", "https://clojure.org/", "/about/rationale", "Clojure - Rationale", "https://clojure.org/about/rationale"),
+        ("Clojure - Rationale", "https://clojure.org/about/rationale", "/reference/documentation", "Clojure - The Reader", "https://clojure.org/reference/reader"),
+        ("Clojure - The Reader", "https://clojure.org/reference/reader", "/api/api", "Clojure - API Documentation", "https://clojure.org/api/api"),
+        ("Clojure - API Documentation", "https://clojure.org/api/api", "/releases/downloads", "Clojure - Clojure Downloads", "https://clojure.org/releases/downloads"),
+        ("Clojure - Clojure Downloads", "https://clojure.org/releases/downloads", "/guides/guides", "Clojure - Getting Started", "https://clojure.org/guides/getting_started"),
+        ("Clojure - Getting Started", "https://clojure.org/guides/getting_started", "/community/success_stories", "Clojure - Success Stories", "https://clojure.org/community/success_stories"),
+        ("Clojure - Success Stories", "https://clojure.org/community/success_stories", "/dev/dev", "Clojure - Development", "https://clojure.org/dev/dev"),
+        ("Clojure - Development", "https://clojure.org/dev/dev", "/news/news", "Clojure - News", "https://clojure.org/news/news"),
+        ("Clojure - News", "https://clojure.org/news/news", "/community/resources", "Clojure - Community Resources", "https://clojure.org/community/resources"),
+        ("Clojure - Community Resources", "https://clojure.org/community/resources", "/community/contributing", "Clojure - Contributing", "https://clojure.org/community/contributing"),
+        ("Clojure - Contributing", "https://clojure.org/community/contributing", "/community/companies", "Clojure - Companies", "https://clojure.org/community/companies"),
+        ("Clojure - Companies", "https://clojure.org/community/companies", "/community/license", "Clojure - License", "https://clojure.org/community/license"),
+    ]
+    entries = [
+        {"time": "07:22:05", "url": "https://clojure.org/", "title": "Clojure", "driver": "agent"},
+        {"time": "07:22:05", "url": "https://clojure.org/", "title": "Clojure", "driver": "user"},
+    ]
+    for title, url, nxt, dest_title, dest_url in pages:
+        entries.append({"time": "07:22:06", "url": url, "title": title, "driver": "user", "via": f"preview scroll to a[href='{nxt}']"})
+        entries.append({"time": "07:22:10", "url": dest_url, "title": dest_title, "driver": "user", "via": f"preview click (a[href='{nxt}'])"})
+    entries.append({"time": "07:22:45", "url": "https://clojure.org/community/license", "title": "Clojure - License", "driver": "agent"})
+    text = format_watch_log(entries, "saved.json")
+    lines = text.splitlines()
+    step_lines = [l for l in lines if "[step " in l]
+    assert [l.split("[step ")[1].split("]")[0] for l in step_lines] == [str(n) for n in range(1, 25)]
+    sels = ["/about/rationale", "/reference/documentation", "/api/api", "/releases/downloads", "/guides/guides", "/community/success_stories", "/dev/dev", "/news/news", "/community/resources", "/community/contributing", "/community/companies", "/community/license"]
+    for n, sel in enumerate(sels, 1):
+        assert f"via preview scroll to a[href='{sel}'] [scroll] [step {2 * n - 1}]" in text
+        assert f"via preview click (a[href='{sel}']) [click-driven] [step {2 * n}]" in text
+    assert "steps: 12 scroll, 12 click-driven, 2 driver transitions (24 action steps)" in text
+    for l in step_lines:
+        if "[scroll]" in l:
+            assert "[click-driven]" not in l
+        if "[click-driven]" in l:
+            assert "[scroll]" not in l
+    def via_part(line):
+        return line.split(" via ", 1)[1].split(" [scroll]")[0].split(" [click-driven]")[0]
+    scroll_lines = [l for l in step_lines if "[scroll]" in l]
+    click_lines = [l for l in step_lines if "[click-driven]" in l]
+    assert set(via_part(l) for l in scroll_lines) == {f"preview scroll to a[href='{s}']" for s in sels}
+    assert set(via_part(l) for l in click_lines) == {f"preview click (a[href='{s}'])" for s in sels}
+    assert len(scroll_lines) == 12 and len(click_lines) == 12
+
+
 
 def test_kilo_provider_no_key_no_auth_header_and_default_model():
     """Kilo cycle: get_provider('kilo') defaults to kilo-auto/free,

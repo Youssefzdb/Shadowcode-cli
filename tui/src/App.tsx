@@ -7,6 +7,12 @@ import { ToolPanel } from './components/ToolPanel.js';
 import { StatusBar } from './components/StatusBar.js';
 import { Input } from './components/Input.js';
 import { PermissionPrompt } from './components/PermissionPrompt.js';
+import { HelpOverlay } from './components/HelpOverlay.js';
+import { CommandPalette } from './components/CommandPalette.js';
+import { resolveTheme, THEME_NAMES, isThemeName } from './lib/theme.js';
+import { parseMode, modeInfo, type PermissionMode } from './lib/mode.js';
+import { filterCommands } from './lib/palette.js';
+import { cardFromToolEvent, type ToolCard } from './lib/toolCards.js';
 import { applyEvent, type TranscriptLine } from './lib/protocol.js';
 import { runTurn, type AgentOptions } from './lib/agent.js';
 import {
@@ -35,21 +41,9 @@ export interface AppProps {
 	initialSessionId?: string;
 }
 
-const HELP = [
-	'/help /model [name] /provider [name] /tools /sessions [query]',
-	'/sessions-view [query] /sessions-view <id> info|export|export-file|resume /session-info <id>',
-	'/search-sessions <q> [--from YYYY-MM-DD] [--to YYYY-MM-DD] /export <id> [md|json] /export-file <id> [md|json] [path]',
-	'/resume <id> /clear /compact /permissions /browser /browser-watch /browser-watch-replay /browser-watch-hide /health /health-history [n] /health-history-hide /mcp [server] /doctor',
-	'/browser-watch-replay shows the FULL saved replay (all entries, both driver transitions) as a panel, not the 10-entry live tail',
-	'/go-search <query> — Go /search first, Python search_files fallback (real, not a hint)',
-	'/browser shows preview health, title, URL, driver, takeover/handback hints, watch log tail',
-	'/health shows python core, TS TUI, Go preview, native scanner, Playwright (honest, never faked)',
-	'/exit — !cmd runs a shell command in the workdir (via the Python core).',
-	'Up/Down = history. Ctrl-C, or /exit, to quit.',
-	'Slash commands are handled locally; anything else goes to the agent.',
-	'Permission note: in subprocess mode destructive tools are denied',
-	'unless --allow-destructive was passed; no prompt is faked here.',
-];
+/* Help is now the /help overlay (components/HelpOverlay.tsx),
+ * driven by the same COMMANDS list as the palette — no wall of
+ * text is dumped into the transcript any more. */
 
 export function App(props: AppProps): React.ReactElement {
 	const { exit } = useApp();
@@ -77,8 +71,37 @@ export function App(props: AppProps): React.ReactElement {
 		return Number.isFinite(p) && p > 0 ? p : 8765;
 	});
 	const [permission, setPermission] = useState<string | null>(null);
+	const [themeName, setThemeName] = useState<string>('dark');
+	const theme = resolveTheme(themeName);
+	const [permissionMode, setPermissionModeState] = useState<PermissionMode>(
+		(props.agent.permissionMode as PermissionMode) ?? 'auto',
+	);
+	const setMode = useCallback(
+		(mode: PermissionMode) => {
+			props.agent.permissionMode = mode;
+			setPermissionModeState(mode);
+		},
+		[props.agent],
+	);
+	const [toolCards, setToolCards] = useState<ToolCard[]>([]);
+	const [panelCollapsed, setPanelCollapsed] = useState(false);
+	const [helpOpen, setHelpOpen] = useState(false);
+	const [paletteOpen, setPaletteOpen] = useState(false);
+	const [paletteQuery, setPaletteQuery] = useState('');
+	const [paletteSelected, setPaletteSelected] = useState(0);
+	const [spinnerTick, setSpinnerTick] = useState(0);
+	const turnStartRef = useRef(0);
+	const toolSegmentStartRef = useRef(0);
+	const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+	const spinner = SPINNER[spinnerTick % SPINNER.length] ?? '⠋';
 	const sessionRef = useRef(sessionId);
 	sessionRef.current = sessionId;
+
+	useEffect(() => {
+		if (!thinking) return;
+		const timer = setInterval(() => setSpinnerTick((v) => v + 1), 120);
+		return () => clearInterval(timer);
+	}, [thinking]);
 
 	const append = useCallback((line: TranscriptLine) => {
 		setLines((prev) => [...prev, line]);
@@ -120,12 +143,52 @@ export function App(props: AppProps): React.ReactElement {
 			setHistory((h) => [...h, trimmed]);
 			setHistIdx(null);
 			append({ kind: 'user', text: trimmed });
+			if (trimmed === '/theme' || trimmed === '/theme list') {
+				append({ kind: 'system', text: `theme=${themeName} (available: ${THEME_NAMES.join(', ')}) — /theme <name> to switch.` });
+				return;
+			}
+			if (trimmed.startsWith('/theme ')) {
+				const name = trimmed.split(/\s+/)[1] ?? '';
+				if (!isThemeName(name)) {
+					append({ kind: 'system', text: `unknown theme: ${name} (available: ${THEME_NAMES.join(', ')})` });
+					return;
+				}
+				setThemeName(name);
+				append({ kind: 'system', text: `theme=${name}` });
+				return;
+			}
+			if (trimmed === '/mode') {
+				const info = modeInfo(permissionMode);
+				append({ kind: 'system', text: `mode=${info.label} (${info.mode}) — ${info.description}` });
+				return;
+			}
+			if (trimmed.startsWith('/mode ')) {
+				const mode = parseMode(trimmed.split(/\s+/)[1] ?? '');
+				if (!mode) {
+					append({ kind: 'system', text: 'usage: /mode plan|auto|manual (aliases: build=auto, ask=manual)' });
+					return;
+				}
+				setMode(mode);
+				const info = modeInfo(mode);
+				append({ kind: 'system', text: `mode=${info.label} (${info.mode}) — ${info.description} (next turn uses --permission-mode ${mode})` });
+				return;
+			}
+			if (trimmed === '/palette') {
+				setPaletteQuery('');
+				setPaletteSelected(0);
+				setPaletteOpen(true);
+				return;
+			}
+			if (trimmed === '/panel') {
+				setPanelCollapsed((v) => !v);
+				return;
+			}
 			if (trimmed === '/exit' || trimmed === '/quit') {
 				exit();
 				return;
 			}
 			if (trimmed === '/help') {
-				for (const h of HELP) append({ kind: 'system', text: h });
+				setHelpOpen(true);
 				return;
 			}
 			if (trimmed === '/clear') {
@@ -359,6 +422,8 @@ export function App(props: AppProps): React.ReactElement {
 				return;
 			}
 			setThinking(true);
+			turnStartRef.current = Date.now();
+			toolSegmentStartRef.current = turnStartRef.current;
 			try {
 				const handle = runTurn(props.agent, sessionRef.current || null, trimmed);
 				for await (const ev of handle.events) {
@@ -368,6 +433,14 @@ export function App(props: AppProps): React.ReactElement {
 					} else if (ev.type === 'tool') {
 						setToolCount((c) => c + 1);
 						setLastTool(ev.name);
+						// Real event -> real card. Elapsed is the
+						// turn segment (turn start / previous tool
+						// to this event), NOT core execution time,
+						// which the core protocol does not report.
+						const started = toolSegmentStartRef.current;
+						const now = Date.now();
+						toolSegmentStartRef.current = now;
+						setToolCards((prev) => [...prev, cardFromToolEvent(ev.name, ev.result, started, now)]);
 						if (ev.name === 'browser_open' || ev.name === 'browser_screenshot') {
 							const m = /localhost:\d+/.exec(ev.result);
 							if (m) setBrowserUrl(`http://${m[0]}`);
@@ -382,12 +455,59 @@ export function App(props: AppProps): React.ReactElement {
 				setThinking(false);
 			}
 		},
-		[append, exit, props.agent],
+		[append, exit, props.agent, themeName, permissionMode, setMode],
 	);
 
 	useInput((inputChar, key) => {
 		if (key.ctrl && inputChar === 'c') {
 			exit();
+			return;
+		}
+		// Help overlay: Esc closes it.
+		if (helpOpen) {
+			if (key.escape) setHelpOpen(false);
+			return;
+		}
+		// Command palette: its own typing/selection keys.
+		if (paletteOpen) {
+			const filtered = filterCommands(paletteQuery);
+			if (key.escape) {
+				setPaletteOpen(false);
+				return;
+			}
+			if (key.upArrow) {
+				setPaletteSelected((v) => Math.max(0, v - 1));
+				return;
+			}
+			if (key.downArrow) {
+				setPaletteSelected((v) => Math.min(Math.max(0, filtered.length - 1), v + 1));
+				return;
+			}
+			if (key.return) {
+				const cmd = filtered[paletteSelected];
+				if (cmd) setInput(`/${cmd.name} `);
+				setPaletteOpen(false);
+				return;
+			}
+			if (key.backspace || key.delete) {
+				setPaletteQuery((v) => v.slice(0, -1));
+				setPaletteSelected(0);
+				return;
+			}
+			if (inputChar) {
+				setPaletteQuery((v) => v + inputChar);
+				setPaletteSelected(0);
+			}
+			return;
+		}
+		if (key.ctrl && inputChar === 'p') {
+			setPaletteQuery(input.startsWith('/') ? input.slice(1) : '');
+			setPaletteSelected(0);
+			setPaletteOpen(true);
+			return;
+		}
+		if (key.ctrl && inputChar === 't') {
+			setPanelCollapsed((v) => !v);
 			return;
 		}
 		if (key.return) {
@@ -429,23 +549,34 @@ export function App(props: AppProps): React.ReactElement {
 	return (
 		<Box flexDirection="column" height="100%">
 			<Header
+				theme={theme}
 				provider={props.agent.provider}
 				model={props.agent.model ?? ''}
 				sessionId={sessionId}
-				permissionMode={props.agent.permissionMode ?? 'auto'}
+				modeLabel={modeInfo(permissionMode).label}
+				permissionMode={permissionMode}
+				toolCount={toolCount}
 				browserUrl={browserUrl}
 				browserDriver={browserUrl ? browserDriver : undefined}
 				browserTitle={previewTitle || undefined}
 				browserHealth={previewHealthy}
 			/>
-			<Transcript lines={lines} />
-			<ToolPanel lines={lines} />
-			{replayEntries !== null ? <BrowserWatchPanel entries={replayEntries} savedFile={replayFile} /> : null}
-			{healthPanel !== null ? <HealthHistoryPanel lines={healthPanel} /> : null}
-			{permission ? <PermissionPrompt prompt={permission} onAnswer={() => setPermission(null)} /> : null}
-			<StatusBar status="Ready" thinking={thinking} toolCount={toolCount} lastTool={lastTool} messageCount={lines.length} previewHealthy={previewHealthy} previewPort={goPort} previewDriver={browserDriver} previewTitle={previewTitle || undefined} previewUrl={browserPageUrl || undefined} />
-			<Input value={input} />
-			<Text color="gray">Tip: browser preview URL appears in the header when the agent opens the browser.</Text>
+			<Box flexDirection="row" flexGrow={1}>
+				<Box flexDirection="column" flexGrow={1}>
+					<Transcript lines={lines} theme={theme} />
+					{replayEntries !== null ? <BrowserWatchPanel entries={replayEntries} savedFile={replayFile} theme={theme} /> : null}
+					{healthPanel !== null ? <HealthHistoryPanel lines={healthPanel} theme={theme} /> : null}
+					{permission ? <PermissionPrompt prompt={permission} onAnswer={() => setPermission(null)} theme={theme} /> : null}
+				</Box>
+				<ToolPanel theme={theme} cards={toolCards} thinking={thinking} spinner={spinner} collapsed={panelCollapsed} />
+			</Box>
+			{helpOpen ? <HelpOverlay theme={theme} /> : null}
+			{paletteOpen ? (
+				<CommandPalette theme={theme} query={paletteQuery} commands={filterCommands(paletteQuery)} selected={paletteSelected} />
+			) : null}
+			<StatusBar theme={theme} status="Ready" thinking={thinking} spinner={spinner} toolCount={toolCount} lastTool={lastTool} messageCount={lines.length} modeLabel={modeInfo(permissionMode).label} previewHealthy={previewHealthy} previewPort={goPort} previewDriver={browserDriver} previewTitle={previewTitle || undefined} previewUrl={browserPageUrl || undefined} />
+			<Input value={input} theme={theme} modeLabel={modeInfo(permissionMode).label} thinking={thinking} />
+			<Text color={theme.muted}>Ctrl+P palette · /help · Ctrl+T tools panel · /theme · /mode · /panel — browser preview URL appears in the header when the agent opens the browser.</Text>
 		</Box>
 	);
 }

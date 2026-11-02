@@ -563,3 +563,46 @@ describe('cycle 26 eleven-page chain replay (TS TUI)', () => {
 		}
 	});
 });
+
+describe('cycle 27 twelve-page chain replay (TS TUI)', () => {
+	it('numbers scroll -> click x12 as steps 1..24, with a steps footer, without cross-marking', () => {
+		const pages = [
+			{ title: 'Clojure', url: 'https://clojure.org/', next: '/about/rationale', destTitle: 'Clojure - Rationale', destUrl: 'https://clojure.org/about/rationale' },
+			{ title: 'Clojure - Rationale', url: 'https://clojure.org/about/rationale', next: '/reference/documentation', destTitle: 'Clojure - The Reader', destUrl: 'https://clojure.org/reference/reader' },
+			{ title: 'Clojure - The Reader', url: 'https://clojure.org/reference/reader', next: '/api/api', destTitle: 'Clojure - API Documentation', destUrl: 'https://clojure.org/api/api' },
+			{ title: 'Clojure - API Documentation', url: 'https://clojure.org/api/api', next: '/releases/downloads', destTitle: 'Clojure - Clojure Downloads', destUrl: 'https://clojure.org/releases/downloads' },
+			{ title: 'Clojure - Clojure Downloads', url: 'https://clojure.org/releases/downloads', next: '/guides/guides', destTitle: 'Clojure - Getting Started', destUrl: 'https://clojure.org/guides/getting_started' },
+			{ title: 'Clojure - Getting Started', url: 'https://clojure.org/guides/getting_started', next: '/community/success_stories', destTitle: 'Clojure - Success Stories', destUrl: 'https://clojure.org/community/success_stories' },
+			{ title: 'Clojure - Success Stories', url: 'https://clojure.org/community/success_stories', next: '/dev/dev', destTitle: 'Clojure - Development', destUrl: 'https://clojure.org/dev/dev' },
+			{ title: 'Clojure - Development', url: 'https://clojure.org/dev/dev', next: '/news/news', destTitle: 'Clojure - News', destUrl: 'https://clojure.org/news/news' },
+			{ title: 'Clojure - News', url: 'https://clojure.org/news/news', next: '/community/resources', destTitle: 'Clojure - Community Resources', destUrl: 'https://clojure.org/community/resources' },
+			{ title: 'Clojure - Community Resources', url: 'https://clojure.org/community/resources', next: '/community/contributing', destTitle: 'Clojure - Contributing', destUrl: 'https://clojure.org/community/contributing' },
+			{ title: 'Clojure - Contributing', url: 'https://clojure.org/community/contributing', next: '/community/companies', destTitle: 'Clojure - Companies', destUrl: 'https://clojure.org/community/companies' },
+			{ title: 'Clojure - Companies', url: 'https://clojure.org/community/companies', next: '/community/license', destTitle: 'Clojure - License', destUrl: 'https://clojure.org/community/license' },
+		];
+		const entries: any[] = [
+			{ time: '07:22:05', title: 'Clojure', url: 'https://clojure.org/', driver: 'agent' },
+			{ time: '07:22:05', title: 'Clojure', url: 'https://clojure.org/', driver: 'user' },
+		];
+		for (const p of pages) {
+			entries.push({ time: '07:22:06', title: p.title, url: p.url, driver: 'user', via: `preview scroll to a[href='${p.next}']` });
+			entries.push({ time: '07:22:10', title: p.destTitle, url: p.destUrl, driver: 'user', via: `preview click (a[href='${p.next}'])` });
+		}
+		entries.push({ time: '07:22:45', title: 'Clojure - License', url: 'https://clojure.org/community/license', driver: 'agent' });
+		const lines = formatReplayEntries(entries);
+		const stepLines = lines.filter((l) => l.includes('[step '));
+		expect(stepLines.map((l) => l.split('[step ')[1]?.split(']')[0])).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']);
+		for (const [i, sel] of ['/about/rationale', '/reference/documentation', '/api/api', '/releases/downloads', '/guides/guides', '/community/success_stories', '/dev/dev', '/news/news', '/community/resources', '/community/contributing', '/community/companies', '/community/license'].entries()) {
+			expect(lines.some((l) => l.includes(`via preview scroll to a[href='${sel}'] [scroll] [step ${2 * i + 1}]`))).toBe(true);
+			expect(lines.some((l) => l.includes(`via preview click (a[href='${sel}']) [click-driven] [step ${2 * i + 2}]`))).toBe(true);
+		}
+		expect(lines.some((l) => l.includes('steps: 12 scroll, 12 click-driven, 2 driver transitions (24 action steps)'))).toBe(true);
+		expect(countScroll(entries)).toBe(12);
+		expect(countClickDriven(entries)).toBe(12);
+		expect(countTransitions(entries)).toBe(2);
+		for (const l of stepLines) {
+			if (l.includes('[scroll]')) expect(l.includes('[click-driven]')).toBe(false);
+			if (l.includes('[click-driven]')) expect(l.includes('[scroll]')).toBe(false);
+		}
+	});
+});
