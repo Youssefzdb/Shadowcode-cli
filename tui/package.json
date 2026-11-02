@@ -1,0 +1,30 @@
+{
+  "bin": {
+    "shadowcode-tui": "./dist/cli.js"
+  },
+  "dependencies": {
+    "ink": "^8.0.0",
+    "react": "^19.3.1"
+  },
+  "description": "Shadowcode TypeScript TUI \u2014 Ink + React terminal UI for the Shadowcode agent (Python core)",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "name": "@shadowcode/tui",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.24.0"
+}

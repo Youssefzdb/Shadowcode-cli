@@ -1,0 +1,10 @@
+#!/bin/sh
+# shadowcode-tui wrapper: builds if needed, then runs the Ink TUI.
+# Non-TTY runs fall back gracefully (see src/cli.tsx) instead of crashing.
+set -e
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ ! -f "$DIR/dist/cli.js" ]; then
+  echo "Building Shadowcode TUI…"
+  (cd "$DIR" && npm run build)
+fi
+exec node "$DIR/dist/cli.js" "$@"

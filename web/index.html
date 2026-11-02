@@ -1,0 +1,16 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Shadowcode live preview</title>
+<style>body{font-family:system-ui,sans-serif;margin:16px}img{max-width:100%;border:1px solid #888}button{margin-right:6px}</style>
+</head><body>
+<h2 id="drv">AGENT DRIVING</h2><p id="info"></p>
+<button onclick="fetch('/takeover',{method:'POST'})">Take control</button>
+<button onclick="fetch('/handback',{method:'POST'})">Hand back to agent</button>
+<img id="shot" src="/shot.png" alt="live browser screenshot">
+<p><small>Served by the Go preview server (127.0.0.1 only) or the Python browser thread — same /state.json and /shot.png shapes. No sign-in, no payment, no CAPTCHA solving in either.</small></p>
+<script>
+async function tick(){try{let r=await fetch('/state.json');let s=await r.json();
+document.getElementById('info').textContent=(s.title||'')+' — '+(s.url||'');
+document.getElementById('drv').textContent=s.driver==='user'?'USER DRIVING':'AGENT DRIVING';
+document.getElementById('shot').src='/shot.png?'+Date.now();}catch(e){}}
+setInterval(tick,1000); tick();
+</script></body></html>
