@@ -317,3 +317,5 @@ make clean
 - Limit: 200 requests/hour per IP. No VPN / IP rotation (declined
   as limit evasion); legitimate fallback is backoff/wait or a
   different legitimately accessible free provider/model.
+
+- Live replay evidence is now sixteen-site, and ten-page: cycle 25 adds julialang.org (home -> downloads -> learning -> blog -> community -> contribute -> jsoc -> community/standards -> community/stewards -> governance -> diversity) via scroll -> click x10, saved at test-workspace/.shadowcode/browser-watch-20261102-070641-91844.json. Both TUIs' replay formatters number the action entries [step 1] … [step 20] and append a steps footer (10 scroll, 10 click-driven, 2 transitions, 20 action steps), with no cross-marking, verified identically on the real saved log in both languages.

@@ -439,3 +439,7 @@ full reply), token counting, and any sign-in/payment flow.
   (another Kilo `:free` model, or Groq/Gemini/OpenRouter free
   tier). Auto Free prompts may be logged upstream; not for
   sensitive/production data.
+
+## Cycle 25 additions
+- Ten-page browser chain (verified live, not unit-only): agent opens julialang.org, preview takeover, user scrolls + clicks across ten source pages (home -> downloads -> learning -> blog -> community -> contribute -> jsoc -> community/standards -> community/stewards -> governance -> diversity), handback, agent resumes from the diversity page with no reload. Saved log (23 entries, 10 scroll, 10 click-driven, 2 transitions, 20 action steps) is in `test-workspace/.shadowcode/browser-watch-20261102-070641-91844.json`.
+- Replay step numbering continues 1..20 across the chain in both Python `format_watch_log()` and TS `formatReplayEntries()`, with the steps footer and no cross-marking, pinned by new tests in both languages and verified identically on the real saved log in both languages. No formatter change was needed in cycle 25; the polish is the pinning tests and the real-log verification in both languages.

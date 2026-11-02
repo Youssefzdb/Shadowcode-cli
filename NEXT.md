@@ -1,4 +1,4 @@
-# Shadowcode — next cycle (cycle 25, after cycle 24)
+# Shadowcode — next cycle (cycle 26, after cycle 25)
 
 Cycle 24 is done except the items in MORNING_APPROVALS.md.
 
@@ -229,9 +229,9 @@ Cycle 24 is done except the items in MORNING_APPROVALS.md.
    first try. The live script was run from inside
    ~/workspace/shadowcode, so its saved log landed directly
    in test-workspace/.shadowcode/ with no move.
-   Next browser item: a sixteenth site with a ten-page
-   chain — scroll -> click x10 (steps 1..20) — or, if no clean
-   ten-page chain loads, a multi-step form flow on a public
+   Next browser item: a seventeenth site with an eleven-page
+   chain — scroll -> click x11 (steps 1..22) — or, if no clean
+   eleven-page chain loads, a multi-step form flow on a public
    documentation site, to prove the sequence composes further.
 8. Packaging: verify `pip install -e .` puts `shadowcode` on PATH
    (install step deferred to the morning; offline verification

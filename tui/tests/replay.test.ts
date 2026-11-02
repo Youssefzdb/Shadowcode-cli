@@ -480,3 +480,44 @@ describe('cycle 24 nine-page chain replay (TS TUI)', () => {
 		}
 	});
 });
+
+describe('cycle 25 ten-page chain replay (TS TUI)', () => {
+	it('numbers scroll -> click x10 as steps 1..20, with a steps footer, without cross-marking', () => {
+		const pages = [
+			{ title: 'The Julia Programming Language', url: 'https://julialang.org/', next: '/downloads/', destTitle: 'Installing Julia', destUrl: 'https://julialang.org/downloads/' },
+			{ title: 'Installing Julia', url: 'https://julialang.org/downloads/', next: '/learning/', destTitle: 'Get started with Julia', destUrl: 'https://julialang.org/learning/' },
+			{ title: 'Get started with Julia', url: 'https://julialang.org/learning/', next: '/blog/', destTitle: 'The Julia Language Blog', destUrl: 'https://julialang.org/blog/' },
+			{ title: 'The Julia Language Blog', url: 'https://julialang.org/blog/', next: '/community/', destTitle: 'Community', destUrl: 'https://julialang.org/community/' },
+			{ title: 'Community', url: 'https://julialang.org/community/', next: '/contribute/', destTitle: 'Ask and answer questions', destUrl: 'https://julialang.org/contribute/' },
+			{ title: 'Ask and answer questions', url: 'https://julialang.org/contribute/', next: '/jsoc/', destTitle: 'Julia Seasons of Contributions', destUrl: 'https://julialang.org/jsoc/' },
+			{ title: 'Julia Seasons of Contributions', url: 'https://julialang.org/jsoc/', next: '/community/standards/', destTitle: 'Julia Community - Standards', destUrl: 'https://julialang.org/community/standards/' },
+			{ title: 'Julia Community - Standards', url: 'https://julialang.org/community/standards/', next: '/community/stewards/', destTitle: 'Julia Community - Stewards', destUrl: 'https://julialang.org/community/stewards/' },
+			{ title: 'Julia Community - Stewards', url: 'https://julialang.org/community/stewards/', next: '/governance/', destTitle: 'Julia Governance', destUrl: 'https://julialang.org/governance/' },
+			{ title: 'Julia Governance', url: 'https://julialang.org/governance/', next: '/diversity/', destTitle: 'Diversity', destUrl: 'https://julialang.org/diversity/' },
+		];
+		const entries: any[] = [
+			{ time: '07:06:53', title: 'The Julia Programming Language', url: 'https://julialang.org/', driver: 'agent' },
+			{ time: '07:06:53', title: 'The Julia Programming Language', url: 'https://julialang.org/', driver: 'user' },
+		];
+		for (const p of pages) {
+			entries.push({ time: '07:06:54', title: p.title, url: p.url, driver: 'user', via: `preview scroll to a[href='${p.next}']` });
+			entries.push({ time: '07:06:57', title: p.destTitle, url: p.destUrl, driver: 'user', via: `preview click (a[href='${p.next}'])` });
+		}
+		entries.push({ time: '07:07:30', title: 'Diversity', url: 'https://julialang.org/diversity/', driver: 'agent' });
+		const lines = formatReplayEntries(entries);
+		const stepLines = lines.filter((l) => l.includes('[step '));
+		expect(stepLines.map((l) => l.split('[step ')[1]?.split(']')[0])).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']);
+		for (const [i, sel] of ['/downloads/', '/learning/', '/blog/', '/community/', '/contribute/', '/jsoc/', '/community/standards/', '/community/stewards/', '/governance/', '/diversity/'].entries()) {
+			expect(lines.some((l) => l.includes(`via preview scroll to a[href='${sel}'] [scroll] [step ${2 * i + 1}]`))).toBe(true);
+			expect(lines.some((l) => l.includes(`via preview click (a[href='${sel}']) [click-driven] [step ${2 * i + 2}]`))).toBe(true);
+		}
+		expect(lines.some((l) => l.includes('steps: 10 scroll, 10 click-driven, 2 driver transitions (20 action steps)'))).toBe(true);
+		expect(countScroll(entries)).toBe(10);
+		expect(countClickDriven(entries)).toBe(10);
+		expect(countTransitions(entries)).toBe(2);
+		for (const l of stepLines) {
+			if (l.includes('[scroll]')) expect(l.includes('[click-driven]')).toBe(false);
+			if (l.includes('[click-driven]')) expect(l.includes('[scroll]')).toBe(false);
+		}
+	});
+});

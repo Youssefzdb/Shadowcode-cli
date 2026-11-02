@@ -1262,6 +1262,61 @@ def test_cycle24_nine_page_chain_replay_is_step_numbered_1_to_18():
     assert len(scroll_lines) == 9 and len(click_lines) == 9
 
 
+def test_cycle25_ten_page_chain_replay_is_step_numbered_1_to_20():
+    """Cycle 25: a scroll -> click x10 chain across ten source pages
+    (julialang.org home -> downloads -> learning -> blog ->
+    community -> contribute -> jsoc -> community/standards ->
+    community/stewards -> governance -> diversity) must be
+    numbered step 1..20 in order in the Python replay, with a
+    steps footer (10 scroll, 10 click-driven, 2 transitions),
+    exactly as proven live on julialang.org. No cross-marking:
+    scroll lines carry [scroll] only, click lines carry
+    [click-driven] only, and each selector appears only on its
+    own line's via part."""
+    from shadowcode_pkg.browser import format_watch_log
+    pages = [
+        ("The Julia Programming Language", "https://julialang.org/", "/downloads/", "Installing Julia", "https://julialang.org/downloads/"),
+        ("Installing Julia", "https://julialang.org/downloads/", "/learning/", "Get started with Julia", "https://julialang.org/learning/"),
+        ("Get started with Julia", "https://julialang.org/learning/", "/blog/", "The Julia Language Blog", "https://julialang.org/blog/"),
+        ("The Julia Language Blog", "https://julialang.org/blog/", "/community/", "Community", "https://julialang.org/community/"),
+        ("Community", "https://julialang.org/community/", "/contribute/", "Ask and answer questions", "https://julialang.org/contribute/"),
+        ("Ask and answer questions", "https://julialang.org/contribute/", "/jsoc/", "Julia Seasons of Contributions", "https://julialang.org/jsoc/"),
+        ("Julia Seasons of Contributions", "https://julialang.org/jsoc/", "/community/standards/", "Julia Community - Standards", "https://julialang.org/community/standards/"),
+        ("Julia Community - Standards", "https://julialang.org/community/standards/", "/community/stewards/", "Julia Community - Stewards", "https://julialang.org/community/stewards/"),
+        ("Julia Community - Stewards", "https://julialang.org/community/stewards/", "/governance/", "Julia Governance", "https://julialang.org/governance/"),
+        ("Julia Governance", "https://julialang.org/governance/", "/diversity/", "Diversity", "https://julialang.org/diversity/"),
+    ]
+    entries = [
+        {"time": "07:06:53", "url": "https://julialang.org/", "title": "The Julia Programming Language", "driver": "agent"},
+        {"time": "07:06:53", "url": "https://julialang.org/", "title": "The Julia Programming Language", "driver": "user"},
+    ]
+    for title, url, nxt, dest_title, dest_url in pages:
+        entries.append({"time": "07:06:54", "url": url, "title": title, "driver": "user", "via": f"preview scroll to a[href='{nxt}']"})
+        entries.append({"time": "07:06:57", "url": dest_url, "title": dest_title, "driver": "user", "via": f"preview click (a[href='{nxt}'])"})
+    entries.append({"time": "07:07:30", "url": "https://julialang.org/diversity/", "title": "Diversity", "driver": "agent"})
+    text = format_watch_log(entries, "saved.json")
+    lines = text.splitlines()
+    step_lines = [l for l in lines if "[step " in l]
+    assert [l.split("[step ")[1].split("]")[0] for l in step_lines] == [str(n) for n in range(1, 21)]
+    for n, sel in enumerate(["/downloads/", "/learning/", "/blog/", "/community/", "/contribute/", "/jsoc/", "/community/standards/", "/community/stewards/", "/governance/", "/diversity/"], 1):
+        assert f"via preview scroll to a[href='{sel}'] [scroll] [step {2 * n - 1}]" in text
+        assert f"via preview click (a[href='{sel}']) [click-driven] [step {2 * n}]" in text
+    assert "steps: 10 scroll, 10 click-driven, 2 driver transitions (20 action steps)" in text
+    for l in step_lines:
+        if "[scroll]" in l:
+            assert "[click-driven]" not in l
+        if "[click-driven]" in l:
+            assert "[scroll]" not in l
+    def via_part(line):
+        return line.split(" via ", 1)[1].split(" [scroll]")[0].split(" [click-driven]")[0]
+    scroll_lines = [l for l in step_lines if "[scroll]" in l]
+    click_lines = [l for l in step_lines if "[click-driven]" in l]
+    sels = ["/downloads/", "/learning/", "/blog/", "/community/", "/contribute/", "/jsoc/", "/community/standards/", "/community/stewards/", "/governance/", "/diversity/"]
+    assert set(via_part(l) for l in scroll_lines) == {f"preview scroll to a[href='{s}']" for s in sels}
+    assert set(via_part(l) for l in click_lines) == {f"preview click (a[href='{s}'])" for s in sels}
+    assert len(scroll_lines) == 10 and len(click_lines) == 10
+
+
 def test_kilo_provider_no_key_no_auth_header_and_default_model():
     """Kilo cycle: get_provider('kilo') defaults to kilo-auto/free,
     sends NO Authorization header when KILO_API_KEY is unset, and
